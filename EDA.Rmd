@@ -1,0 +1,451 @@
+---
+title: "WQD7005_GroupProject_EDA"
+author: "LOO JIA HAO (17218692)"
+date: "5/16/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse) 
+library(ggcorrplot)
+library(ggplot2)
+library(cowplot)
+
+df <- read.csv("WA_Fn-UseC_-Telco-Customer-Churn.csv", stringsAsFactors = TRUE)
+
+theme_bar <- theme_bw() +
+  theme(plot.title = element_text(size = 14, hjust = 0.5),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        legend.position='none')
+
+
+theme_pie <- theme_void() +
+  theme(plot.title = element_text(size = 14, hjust = 0.5),
+        axis.text = element_text(size = 12),
+        legend.position='none')
+
+theme_donut <- theme_void() +
+  theme(plot.title = element_text(size = 12, hjust = 0.5),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position='none')
+        
+# '#F8766D', '#00BA38', '#619CFF'
+
+theme_2 <- theme_bw()+
+theme(axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.5), legend.position='none')
+
+theme_3 <- theme_bw()+
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), legend.position='none')
+
+```
+
+# 4. Exploratory Analysis
+_TODO_
+In the SAS SEMMA of Explore , this stage further discovery the data by identifying for hidden trends, important information and anomalies in order to acquire comprehension and insight
+
+```{r}
+df$SeniorCitizen <- as.factor(ifelse(df$SeniorCitizen==1, 'Yes', 'No'))
+```
+
+## 4.1. Target Distribution
+
+First, let's check the distribution of our target variable, the **Churn**. This variable records the customers who left the platform within the last month.
+
+The level **"Yes"** represents the customer who has left, while the level **"No"** indicates the customer remains subscribe to our services.
+
+
+```{r fig.width = 8}
+df_churn <- df %>%
+  group_by(Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  mutate(Pos = cumsum(Percent)-(Percent/2))
+
+# Churn Distribution (Bar Chart)
+p1 <- ggplot(df_churn, aes(Churn, Count), fill = Churn) +
+  geom_col(fill = c('#F8766D', '#00BA38')) +
+  geom_text(aes(label = Count), vjust = -0.2) +
+  ggtitle("Churn Distribution") +
+  xlab('Churn') + ylab('Number of Customers') +
+  theme_bar
+
+
+# Churn Rate (Pie Chart)
+p2 <- ggplot(df_churn, aes(x = '', y = Percent, fill = Churn)) +
+  geom_col(fill = c('#F8766D', '#00BA38')) +
+  geom_text(label = sprintf("%.2f%%", df_churn$Percent),
+            position = position_stack(vjust = 0.5, reverse = TRUE)) +
+  scale_y_continuous(breaks = df_churn$Pos,
+                     labels = df_churn$Churn) +
+  coord_polar('y') +
+  ggtitle("Churn Rate") +
+  theme_pie
+
+plot_grid(p1, p2)
+
+```
+
+
+Among the total number of 7,043 customers in our sample, the ratio of churn to retention is roughly 1:3. This means that out of 10 customers, there are 2~3 of them will likely left.
+
+As we further observe, the churn rate within the last month is pretty high which is around **26%**.
+
+The ideal churn rate is 5% or below. If it reach 10% and above, this signals us to further improve our customer experience in order to retain our customers.
+
+
+## 4.2. Categorical Variables: Demographic
+
+In order to further understand the distribution of customer churn, we would like to explore more about the demographic data. These customer information includes the gender, age range, marital (partner) status and dependency status.
+
+
+```{r fig.width = 10}
+# Gender plot
+df_gender <- df %>%
+  group_by(gender, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p3 <- ggplot(df_gender, aes(x = gender, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Gender') +
+    theme_bar
+    
+p4 <- df_gender %>%
+  filter(gender=='Female') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Female") +
+    theme_donut
+
+p5 <- df_gender %>%
+  filter(gender=='Male') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Male") +
+    theme_donut
+
+
+p_gender <- plot_grid(p3, plot_grid(p4, p5, ncol = 1),
+          get_legend(p3 + theme(legend.position='right')),
+          ncol = 3,
+          rel_widths = c(1, 1, .25))
+
+# Age Range plot
+df_age <- df %>%
+  group_by(SeniorCitizen, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p6 <- ggplot(df_age, aes(x = SeniorCitizen, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Senior Citizen') +
+    theme_bar
+
+    
+p7 <- df_age %>%
+  filter(SeniorCitizen=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p8 <- df_age %>%
+  filter(SeniorCitizen=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_age <- plot_grid(p6, plot_grid(p7, p8, ncol = 1),
+          get_legend(p6 + theme(legend.position='right')),
+          ncol = 3,
+          rel_widths = c(1, 1, .25))
+
+# Partner plot
+df_partner <- df %>%
+  group_by(Partner, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p9 <- ggplot(df_partner, aes(x = Partner, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Partner') +
+    theme_bar
+
+    
+p10 <- df_partner %>%
+  filter(Partner=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p11 <- df_partner %>%
+  filter(Partner=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_partner <- plot_grid(p9, plot_grid(p10, p11, ncol = 1),
+          get_legend(p9 + theme(legend.position='right')),
+          ncol = 3,
+          rel_widths = c(1, 1, .25))
+
+# Dependent Plot
+df_dependent <- df %>%
+  group_by(Dependents, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p12 <- ggplot(df_dependent, aes(x = Dependents, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Dependents') +
+    theme_bar
+
+    
+p13 <- df_dependent %>%
+  filter(Dependents=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p14 <- df_dependent %>%
+  filter(Dependents=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_dependent <- plot_grid(p12, plot_grid(p13, p14, ncol = 1),
+          get_legend(p12 + theme(legend.position='right')),
+          ncol = 3,
+          rel_widths = c(1, 1, .25))
+
+
+plot_grid(p_gender, p_age, p_partner, p_dependent, ncol = 2)
+
+```
+
+
+Based on the plots above, we can conclude that:
+
+- The sample is almost **evenly distributed** across the gender and partner variables.
+
+- Only **minority** of the customers are senior citizens and have dependents.
+
+- For gender, the churn rate is **almost equal** between male and female.
+
+- However, the churn rate is **slightly lower** for those who have partner.
+
+- Customers who are senior citizens or having dependents constitutes a **lower churn rate** as compared to their opposites.
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+glimpse(df)
+```
+
+```{r}
+summary(df)
+```
+
+```{r}
+sapply(df, function(x) sum(is.na(x)))
+```
+
+
+```{r}
+df$SeniorCitizen <- as.factor(ifelse(df$SeniorCitizen==1, 'Yes', 'No'))
+```
+
+
+
+```{r fig.width = 10}
+# Gender
+p1 <- df %>%
+  group_by(gender) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x='', y=Percent, fill=gender)) +
+    geom_col(fill = c('#2F7FE6', '#F28CFD')) +
+    geom_text(aes(x = '', y = cumsum(Percent)-(Percent/2), label = sprintf("%.2f%%", Percent), color=gender),
+              show.legend=TRUE, hjust = -0.1, vjust = 1.5, size = 3) +
+    coord_polar("y", start = 90) +
+    ggtitle("Distribution by Gender") +
+    theme_void() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5)) +
+    scale_color_manual(values = c("blue","red"))
+
+
+
+
+# SeniorCitizen 
+p2 <- df %>%
+  group_by(SeniorCitizen) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x='', y=Percent, fill=SeniorCitizen)) +
+  geom_col(fill = c('#2F7FE6', '#F28CFD')) +
+  coord_polar("y", start = 90) +
+  geom_text(aes(x = '', y = cumsum(Percent)-(Percent/2), label = sprintf("%.2f%%", Percent), color=SeniorCitizen),
+            show.legend=TRUE, hjust = -0.1, vjust = 1.5, size = 3) +
+  ggtitle("Distribution by Age Group") +
+  theme_void() +
+  theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5)) +
+  scale_color_manual(values = c("blue","red"))
+
+
+# Partner
+p3 <- df %>%
+  group_by(Partner) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x='', y=Percent, fill=Partner)) +
+  geom_col(fill = c('#2F7FE6', '#F28CFD')) +
+  coord_polar("y", start = 90) +
+  geom_text(aes(x = '', y = cumsum(Percent)-(Percent/2), label = sprintf("%.2f%%", Percent), color=Partner),
+            show.legend=TRUE, hjust = -0.1, vjust = 1.5, size = 3) +
+  ggtitle("Distribution by Marital Status") +
+  theme_void() +
+  theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5)) +
+  scale_color_manual(values = c("blue","red"))
+
+# Dependents
+p4 <- df %>%
+  group_by(Dependents) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x='', y=Percent, fill=Dependents)) +
+  geom_col(fill = c('#2F7FE6', '#F28CFD')) +
+  coord_polar("y", start = 90) +
+  geom_text(aes(x = '', y = cumsum(Percent)-(Percent/2), label = sprintf("%.2f%%", Percent), color=Dependents),
+            show.legend=TRUE, hjust = -0.1, vjust = 1.5, size = 3) +
+  ggtitle("Distribution by Dependency Status") +
+  theme_void() +
+  theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5)) +
+  scale_color_manual(values = c("blue","red"))
+
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+
+
+```{r fig.width = 10}
+# Gender
+p7 <- df %>%
+  group_by(gender, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=gender, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Gender') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Gender') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+# SeniorCitizen 
+p8 <- df %>%
+  group_by(SeniorCitizen, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=SeniorCitizen, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Senior Citizen') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Age Group') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+
+# Partner
+p9 <- df %>%
+  group_by(Partner, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=Partner, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Have Partner') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Marital Status') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+# Dependents
+p10 <- df %>%
+  group_by(Dependents, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=Dependents, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Have Dependents') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Dependency Status') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+grid.arrange(p7, p8, p9, p10, ncol = 2)
+
+```

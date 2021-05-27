@@ -1,0 +1,461 @@
+---
+title: "EDA_plots"
+author: "LOO JIA HAO (17218692)"
+date: "5/27/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse) 
+library(ggcorrplot)
+library(ggplot2)
+library(cowplot)
+
+df <- read.csv("WA_Fn-UseC_-Telco-Customer-Churn.csv", stringsAsFactors = TRUE)
+
+theme_bar <- theme_bw() +
+  theme(plot.title = element_text(size = 14, hjust = 0.5),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        legend.position='none')
+
+theme_pie <- theme_void() +
+  theme(plot.title = element_text(size = 14, hjust = 0.5),
+        axis.text = element_text(size = 12),
+        legend.position='none')
+
+theme_donut <- theme_void() +
+  theme(plot.title = element_text(size = 12, hjust = 0.5),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position='none')
+        
+# '#F8766D', '#00BA38', '#619CFF'
+
+theme_2 <- theme_bw()+
+theme(axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.5), legend.position='none')
+
+theme_3 <- theme_bw()+
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), legend.position='none')
+
+```
+
+
+```{r}
+df$SeniorCitizen <- as.factor(ifelse(df$SeniorCitizen==1, 'Yes', 'No'))
+```
+
+
+```{r fig.width = 8}
+df_churn <- df %>%
+  group_by(Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  mutate(Pos = cumsum(Percent)-(Percent/2))
+
+# Churn Distribution (Bar Chart)
+p1 <- ggplot(df_churn, aes(Churn, Count), fill = Churn) +
+  geom_col(fill = c('#F8766D', '#00BA38')) +
+  geom_text(aes(label = Count), vjust = -0.2) +
+  ggtitle("Churn Distribution") +
+  xlab('Churn') + ylab('Number of Customers') +
+  theme_bar
+
+
+# Churn Rate (Pie Chart)
+p2 <- ggplot(df_churn, aes(x = '', y = Percent, fill = Churn)) +
+  geom_col(fill = c('#F8766D', '#00BA38')) +
+  geom_text(label = sprintf("%.2f%%", df_churn$Percent),
+            position = position_stack(vjust = 0.5, reverse = TRUE)) +
+  scale_y_continuous(breaks = df_churn$Pos,
+                     labels = df_churn$Churn) +
+  coord_polar('y') +
+  ggtitle("Churn Rate") +
+  theme_pie
+
+plot_grid(p1, p2)
+
+```
+
+
+```{r fig.width = 8}
+# Gender plot
+df_gender <- df %>%
+  group_by(gender, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p3 <- ggplot(df_gender, aes(x = gender, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Gender') +
+    theme_bar
+    
+p4 <- df_gender %>%
+  filter(gender=='Female') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Female") +
+    theme_donut
+
+p5 <- df_gender %>%
+  filter(gender=='Male') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Male") +
+    theme_donut
+
+
+p_gender <- plot_grid(p3, plot_grid(p4, p5, ncol = 1))
+
+# Age Range plot
+df_age <- df %>%
+  group_by(SeniorCitizen, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p6 <- ggplot(df_age, aes(x = SeniorCitizen, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Senior Citizen') +
+    theme_bar
+
+    
+p7 <- df_age %>%
+  filter(SeniorCitizen=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p8 <- df_age %>%
+  filter(SeniorCitizen=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_age <- plot_grid(p6, plot_grid(p7, p8, ncol = 1))
+
+# Partner plot
+df_partner <- df %>%
+  group_by(Partner, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p9 <- ggplot(df_partner, aes(x = Partner, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Partner') +
+    theme_bar
+
+    
+p10 <- df_partner %>%
+  filter(Partner=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p11 <- df_partner %>%
+  filter(Partner=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_partner <- plot_grid(p9, plot_grid(p10, p11, ncol = 1))
+
+# Dependent Plot
+df_dependent <- df %>%
+  group_by(Dependents, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p12 <- ggplot(df_dependent, aes(x = Dependents, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Dependents') +
+    theme_bar
+
+    
+p13 <- df_dependent %>%
+  filter(Dependents=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p14 <- df_dependent %>%
+  filter(Dependents=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_dependent <- plot_grid(p12, plot_grid(p13, p14, ncol = 1))
+
+
+plot_grid(plot_grid(p_gender, p_age, p_partner, p_dependent, ncol = 2),
+          get_legend(p12 + theme(legend.position='right')),
+          ncol = 2,
+          rel_widths = c(1, 0.25))
+
+```
+
+
+```{r fig.width = 10}
+# Phone Service plot
+df_phone <- df %>%
+  group_by(PhoneService, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p15 <- ggplot(df_phone, aes(x = PhoneService, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Phone Service') +
+    theme_bar
+
+    
+p16 <- df_phone %>%
+  filter(PhoneService=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p17 <- df_phone %>%
+  filter(PhoneService=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+p_phone <- plot_grid(p15,
+                     plot_grid(p16, p17, ncol = 3),
+                     ncol = 2,
+                     rel_widths = c(1, 2))
+
+# Mulitple Lines plot
+df_lines <- df %>%
+  group_by(MultipleLines, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p18 <- ggplot(df_lines, aes(x = MultipleLines, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Multiple Lines') +
+    theme_bar
+
+    
+p19 <- df_lines %>%
+  filter(MultipleLines=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p20 <- df_lines %>%
+  filter(MultipleLines=='No phone service') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No phone service") +
+    theme_donut
+
+p21 <- df_lines %>%
+  filter(MultipleLines=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_lines <- plot_grid(p18,
+                     plot_grid(p19, p20, p21, ncol = 3),
+                     ncol = 2,
+                     rel_widths = c(1, 2))
+
+# Internet Service plot
+df_internet <- df %>%
+  group_by(InternetService, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p22 <- ggplot(df_internet, aes(x = InternetService, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Internet Service') +
+    theme_bar
+
+    
+p23 <- df_internet %>%
+  filter(InternetService=='DSL') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("DSL") +
+    theme_donut
+
+p24 <- df_internet %>%
+  filter(InternetService=='Fiber optic') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Fiber optic") +
+    theme_donut
+
+p25 <- df_internet %>%
+  filter(InternetService=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+
+p_internet <- plot_grid(p22,
+                        plot_grid(p23, p24, p25, ncol = 3),
+                        ncol = 2,
+                        rel_widths = c(1, 2))
+
+plot_grid(p_phone, p_lines, p_internet,
+          get_legend(p15 + theme(legend.position='bottom')),
+          ncol = 1)
+
+```
+
+
+```{r fig.width=10}
+# Online Security plot
+df_security <- df %>%
+  group_by(OnlineSecurity, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p26 <- ggplot(df_security, aes(x = OnlineSecurity, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Online Security') +
+    theme_bar
+
+    
+p27 <- df_security %>%
+  filter(OnlineSecurity=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p28 <- df_security %>%
+  filter(OnlineSecurity=='No internet service') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No internet service") +
+    theme_donut
+
+p29 <- df_security %>%
+  filter(OnlineSecurity=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_security <- plot_grid(p26,
+                        plot_grid(p27, p28, p29, ncol = 3),
+                        ncol = 2,
+                        rel_widths = c(1, 2))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+

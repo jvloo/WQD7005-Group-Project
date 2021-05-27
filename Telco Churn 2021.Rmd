@@ -1,0 +1,605 @@
+---
+title: "WQD7005 Data Mining Project"
+author: "Adrian Chen"
+date: "23 May 2021"
+output: html_document
+---
+
+# **1.Accessing and Assaying Prepared Data**
+
+##Customer churn commonly can be describe as customer attrition . 
+##The churn refers to the rate at which current subcribing customers who purchase your product or service offering end their relationship with you.
+##Thus the churn in customer will result in as a loss in revenue telco business
+
+## The datasets that for this project study will be:
+## https://www.kaggle.com/blastchar/telco-customer-churn
+
+
+
+# **2.Analysis goal**
+
+### The objectives of this project will be to understand customer behaviors and identifying important variables associated with customer churn.
+
+### The classification decision tree model that will demonstrated by using is ID3 Decision tree . 
+
+### Decision tree is analysis a classification method that uses tree-like models of decisions and their possible outcomes.
+
+## "ID3 stands for Iterative Dichotomiser 3
+
+### The project will explore further on how the ID3 Decision Tree approach by 
+### selecting a best attribute that yields maximum Information Gain(IG) or minimum Entropy(H) from the Churn Datasets"
+
+
+
+### The SEMMA procedure was created by the SAS Institute. The abbreviation SEMMA represents Sample, Explore,Modify, Model, Assess, and alludes to the way toward leading a data mining project.
+
+
+### The **Sample** stage for the project comprises of inspecting the information by separating a part of an enormous data collection sufficiently large to contain the hidden important information yet little enough to control rapidly. 
+
+
+
+# **3.Analysis data**
+
+
+
+```{r}
+setwd("C:\\Users\\Adrian\\Desktop\\Awesome\\Mining Churn")
+getwd()
+```
+
+
+## Lets read the data of Customers Churn
+```{r}
+RChurn<-read.csv("TelcoCustomer_Churn.csv")
+```
+## Lets explore the first 8 rows of the dataframe
+```{r}
+head(RChurn,8)
+```
+### Lets explore the last 8 rows of the dataframe
+```{r}
+tail(RChurn,8)
+```
+
+#Exploring the dimension of the data
+```{r}
+dim(RChurn)
+```
+
+```{r}
+nrow(RChurn)
+```
+
+
+## Loading the important library
+library(dplyr)
+```{r}
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(corrplot)
+library(MASS)
+library(e1071)
+library(ROCR)
+library(gplots)
+library(pROC)
+library(rpart)
+```
+
+Load the fundamental libraries for exploring.
+
+```{r}
+library(tidyverse) 
+library(ggcorrplot)
+library(ggplot2)
+library(cowplot)
+library(gridExtra)
+```
+
+
+
+
+```{r}
+sapply(RChurn, function(x) sum(is.na(x)))
+```
+
+
+A few conclusion can be made:
+
+- The data consists of 7,043 observations and 21 variables.
+
+- There are only 3 continuous variables which are **tenure**, **MonthlyCharges** and **TotalCharges**.
+
+- There are only 11 rows with missing data on the variable **TotalCharges**.
+
+- The variable **SeniorCitizen** is not in the categorical form.
+
+
+
+
+##  **4. Show the column metadata**
+
+```{r}
+colnames(RChurn)
+```
+
+
+Take a look on the data and identify important information for the preprocessing steps later.
+
+```{r}
+glimpse(RChurn)
+```
+
+```{r}
+summary(RChurn)
+```
+
+
+## 5) **Exploring the data source**
+ In the SAS SEMMA of **Explore** , this stage further discovery the data by identifying for hidden trends, important information and anomalies in order to acquire comprehension and insight
+ 
+## **Exploring the data source**
+### (creating a histogram, changing the graph properties for a histogram,
+### adding a "Missing" Bin to a histogram, creating a pie chart, 
+### exploring variable associations)
+
+First, let's see the distribution of our target variable, the **Churn**.
+
+
+#NOTE: Updated
+The variable represents whether the customer will unsubscribe (Yes) or remain subscribe (No) to our services.
+
+```{r}
+df<-RChurn
+```
+
+```{r fig.width = 8}
+df_churn <- df %>%
+  # Get the total numbers of churn customers
+  group_by(Churn) %>%
+  summarise(Count = n()) %>%
+  # Calculate the churn rate
+  mutate(Percent = prop.table(Count)*100)
+
+# Pie Chart
+p1 <- ggplot(df_churn, aes(x='', y=Percent, fill=Churn)) +
+  geom_col(fill = c('#2F7FE6', '#F28CFD')) +
+  coord_polar("y", start = 90) +
+  geom_text(aes(x = 1, y = cumsum(Percent)-(Percent/2), label = sprintf("%.2f%%", Percent)), hjust = -0.1, vjust = 1.5, size = 4.5) +
+  ggtitle("Churn Rate") +
+  theme_void() +
+  theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+# Bar Chart
+p2 <- ggplot(df_churn, aes(Churn, Count), fill=Churn) +
+  geom_col(fill = c('#2F7FE6', '#F28CFD'), height = 0.5) +
+  geom_text(aes(label = Count), vjust = -0.5, size = 4.5) +
+  xlab('Churn') + ylab('Number of Customers') +
+  ggtitle("Churn Distribution") +
+  theme_cowplot() +
+  theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+Based on the churn rate chart, there is about a quarter (26.58%) of our customers churning in the last month.
+
+
+### 4.3.2. Customer demographic
+
+First, before we would like to know more about demographic data.
+
+The bar chart will be used to compare the population of customers in different gender, age range, partner and dependents.
+
+
+
+
+
+```{r fig.width = 10}
+# Gender
+p7 <- df %>%
+  group_by(gender, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=gender, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Gender') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Gender') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+# SeniorCitizen 
+p8 <- df %>%
+  group_by(SeniorCitizen, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=SeniorCitizen, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Senior Citizen') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Age Group') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+
+# Partner
+p9 <- df %>%
+  group_by(Partner, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=Partner, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Have Partner') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Marital Status') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+# Dependents
+p10 <- df %>%
+  group_by(Dependents, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100) %>%
+  ggplot(aes(x=Dependents, y=Count, fill=Churn)) +
+    geom_bar(stat='identity', position=position_dodge()) +
+    geom_text(aes(label=Count, vjust = -0.25), position=position_dodge(1)) +
+    scale_fill_manual(values=c('#2F7FE6', '#F28CFD')) +
+    xlab('Have Dependents') + ylab('Number of Customers') +
+    ggtitle('Customer Churn by Dependency Status') +
+    theme_cowplot() +
+    theme(plot.title = element_text(size = 14, vjust = 2, hjust = 0.5))
+
+
+grid.arrange(p7, p8, p9, p10, ncol = 2)
+
+```
+
+
+As observed from the demographic plots above, we can conclude that:
+
+- The distribution and churn rate of the male and female customers is mostly even.
+
+- The distribution of customers based on different partner status is nearly equal.
+
+- The churn rate of those customers who do not have partner is slightly higher.
+
+- Only minority of our customers are senior citizens and having dependents.
+
+
+
+
+## 6) **Modifying and Correcting Source Data**
+
+###In our Data preprocessing, which also part of SAS SEMMMA  **Modify** stage, where involvement of cleaning data,removing redundant attribute which will help for the modelling section and even encoding data for machine learning applications
+
+## To check for missing data
+```{r}
+colSums(is.na(RChurn))
+```
+
+### From the NA data missing data checking we found that the only column that have
+### Missing data will be on the TotalCharges with total count on 11 missing 
+
+### There two ways to deal with the missing data, either by mean imputation or removing 
+### the missing data completely
+
+### As observed from the **Churn** variable of these affected rows, all these customers are still subscribe to our service.
+
+### Thus,further check on the significance of these rows if removing can be done.
+
+```{r}
+sum(is.na(RChurn$TotalCharges))/nrow(RChurn)*100
+```
+Since this subset constitutes only 0.16% of our data and is quite small, we will just drop them to ease our further analysis task.
+
+
+```{r}
+dim(RChurn)
+```
+
+```{r}
+RChurn2<-na.omit(RChurn)
+dim(RChurn2)
+```
+
+
+## Details of the each variables of the Churn datasets
+
+## Clean and remove Customer ID since no analysis will be done on the column
+
+### As per done earlier the remove irrelevant variables
+
+The variable **customerID** is removed since it will not be used for visualization or modeling.
+
+
+```{r}
+RChurn2$customerID<-NULL
+```
+
+
+## New dimension of of the data will be 7032 rows and 20 Columns variables instead of 21 
+
+```{r}
+head(RChurn2)
+```
+
+```{r}
+dim(RChurn2)
+```
+
+```{r}
+str(RChurn2)
+```
+
+## Using dplyr glimpse gives similar understanding of our variables as well 
+glimpse(RChurn)
+
+## summary of the Churn set
+
+```{r}
+summary(RChurn2$Churn)
+```
+
+## From there we know which will be our interger or double type and which will be our factors
+
+## probailites of Churn
+```{r}
+prop.table(table(RChurn2$Churn))
+```
+
+## Modify columns
+##The MultipleLines variable is dependent on the PhoneService variable, where a ‘no’ ##for the latter variable automatically means a ‘no’ for the former variable. We can ##again further ease our graphics and modeling by recoding the ‘No phone service’ ##response to ‘No’ for the MultipleLines variable.
+
+```{r}
+```{r}
+RChurn2$MultipleLines <-as.factor(plyr::mapvalues(RChurn2$MultipleLines, 
+                                          from=c("No phone service"),
+                                          to=c("No")))
+
+``` 
+
+RChurn2$MultipleLines 
+
+```{r}
+for(i in 9:14){
+  RChurn2[,i] <- as.factor(plyr::mapvalues(RChurn2[,i],
+                                  from= c("No internet service"), to= c("No")))}
+
+```
+
+##```{r}
+##library(dplyr)
+##factorrenames <- names(RChurn2[9:14])
+
+## RChurn3 <- RChurn2 %>% mutate_at(.vars=factorrenames, .funs=~recode_factor(., `No ## internet service`="No")) %>% ##mutate_at(.vars="MultipleLines",.funs=~recode_factor(., `No phone service`="No"))
+
+##```
+
+
+
+```{r}
+RChurn2$MultipleLines
+
+```
+
+
+### After modification as we observe MultipleLines will be a 2 Factor attributes
+```{r}
+class(RChurn2$MultipleLines)
+str(RChurn2$MultipleLines)
+
+
+```
+
+
+### Encoding the attributes of the datasets 
+
+Next, the variable **SeniorCitizen** is encoded into categorical form.
+
+The values are coded in which '0' represents 'No', while the value '1' represents 'Yes'.
+```{r}
+str(RChurn2)
+```
+
+```{r}
+glimpse(RChurn2)
+```
+
+### From the glimpse of data, the attributes that identify as Factors would be :
+###gender ;To encode Female= 0 and Male =1
+### Since SeniorCitizen is already integer 1 or 0 will need factor it
+### Partner ; Yes =1 No =0
+### Dependents : Yes=1 No =0
+### PhoneService; Yes=1 No =0
+### MultipleLines ; Yes=1 No =0 No phone service=2
+### InternetService; DSL=1 , Fiber optic=2 , No=3
+### OnlineSecurity ; Yes=1 No =0
+### OnlineBackup ;Yes=1 No =0 No phone service=2
+### DeviceProtection;Yes=1 No =0 No phone service=2
+### TechSupport ; Yes=1 No =0 No phone service=2
+### StreamingTV ; Yes=1 No =0 No phone service=2
+### StreamingMovies ; Yes=1 No =0 No phone service=2
+### Contract : Month-to-month=1 , One year=2 ,Two year=3
+### PaperlessBilling ;Yes=1 No =0
+### PaymentMethod ; Electronic check=1 Mailed check=2,Bank transfer (automatic)=3
+### Credit card (automatic)=4
+### Churn=  Yes=1 No =0 
+
+
+
+
+###gender ;To encode Female= 0 and Male =1
+```{r}
+RChurn2$gender<- factor(RChurn2$gender,
+                         levels = c("Female","Male"),
+                         labels = c(0,1))
+```
+
+### Since Senior Citizen is already integer 1 or 0 will need factor it
+```{r}
+RChurn2$SeniorCitizen<- as.factor(RChurn2$SeniorCitizen)
+```
+
+### Partner ; Yes =1 No =0
+```{r}
+RChurn2$Partner<- factor(RChurn2$Partner,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### Dependents : Yes=1 No =0
+
+```{r}
+RChurn2$Dependents<- factor(RChurn2$Dependents,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### PhoneService; Yes=1 No =0
+```{r}
+RChurn2$PhoneService<- factor(RChurn2$PhoneService,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### MultipleLines ; Yes=1 No =0 No phone service=2
+
+```{r}
+RChurn2$MultipleLines<- factor(RChurn2$MultipleLines,
+                        levels = c("No","Yes"),
+                        labels = c(0,1))
+```
+
+
+### InternetService; DSL=1 , Fiber optic=2 , No=3
+```{r}
+RChurn2$InternetService<- factor(RChurn2$InternetService,
+                         levels = c("DSL","Fiber optic","No"),
+                         labels = c(1,2,3))
+```
+
+### OnlineSecurity ; Yes=1 No =0
+```{r}
+RChurn2$OnlineSecurity<- factor(RChurn2$OnlineSecurity,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### OnlineBackup ;Yes=1 No =0 No phone service=2
+```{r}
+RChurn2$OnlineBackup<- factor(RChurn2$OnlineBackup,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### DeviceProtection;Yes=1 No =0 No phone service=2
+```{r}
+RChurn2$DeviceProtection<- factor(RChurn2$DeviceProtection,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### TechSupport ; Yes=1 No =0 No phone service=2
+```{r}
+RChurn2$TechSupport<- factor(RChurn2$TechSupport,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+### StreamingTV ; Yes=1 No =0 No phone service=2
+```{r}
+RChurn2$StreamingTV<- factor(RChurn2$StreamingTV,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### StreamingMovies ; Yes=1 No =0 No phone service=2
+```{r}
+RChurn2$StreamingMovies<- factor(RChurn2$StreamingMovies,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+### Contract : Month-to-month=1 , One year=2 ,Two year=3
+```{r}
+RChurn2$Contract<- factor(RChurn2$Contract,levels = c("Month-to-month","One year","Two year"),labels = c(1,2,3))
+```
+
+str(RChurn2$Contract)
+
+### PaperlessBilling ;Yes=1 No =0
+```{r}
+RChurn2$PaperlessBilling<- factor(RChurn2$PaperlessBilling,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+### PaymentMethod ; Electronic check=1 Mailed check=2,Bank transfer (automatic)=3
+### Credit card (automatic)=4
+
+```{r}
+RChurn2$PaymentMethod<- factor(RChurn2$PaymentMethod,
+                        levels = c("Electronic check","Mailed check",
+                        "Bank transfer (automatic)","Credit card (automatic)"),
+                        labels = c(1,2,3,4))
+```
+
+
+RChurn2$MultipleLines
+
+### Churn=  Yes=1 No =0 
+```{r}
+RChurn2$Churn<- factor(RChurn2$Churn,
+                         levels = c("No","Yes"),
+                         labels = c(0,1))
+```
+
+
+
+### In this project, data preprocessing technique involving Data Discretization have been performed . The numeric attributes like tenure, MonthlyCharges and TotalCharges will be discretize  for machine learning classification study. The Simple Discretization: Binning of technique like Equal-width (distance) partitioning
+have been performed in our study of telco customer Churn datasets.
+
+## Binning can also be used as a discretization technique. Here discretization refers to the process of converting or partitioning continuous attributes, features or variables to discretized or nominal attributes/features/variables/intervals
+
+
+## For Equal Width Binning,the algorithm function by dividing the the data into k-intervals where each of it have **equal size**. 
+
+
+##Discretization for tenure
+```{r}
+RChurn2$tenure <- cut(RChurn2$tenure,7,include.lowest=TRUE, labels=c("0-11", "12-23", "24-35","36-47","48-59","60-71", "72 & above"))
+```
+
+```{r}
+str(RChurn2$tenure)
+```
+##Discretization for MonthlyCharges
+```{r}
+RChurn2$MonthlyCharges <- cut(RChurn2$MonthlyCharges,3,include.lowest=TRUE, labels=c("0-39", "40-79", "80-120"))                   
+```
+
+
+##Discretization for TotalCharges
+```{r}
+str(RChurn2$TotalCharges)
+RChurn2$TotalCharges<- as.numeric(RChurn2$TotalCharges)
+RChurn2$TotalCharges <- cut(RChurn2$TotalCharges,8,include.lowest=TRUE, labels=c("0-1086", "1087-2171","2172-3257","3258-4342","4343-5428","5429-6513","6514-7599","7600-8685")) 
+```
+
+
+
+
+```{r}
+head(RChurn2,3)
+```
+
+```{r}
+str(RChurn2)
+```
