@@ -21,6 +21,13 @@ theme_bar <- theme_bw() +
         axis.text = element_text(size = 10),
         legend.position='none')
 
+theme_bar2 <- theme_bw() +
+  theme(plot.title = element_text(size = 14, hjust = 0.5),
+        axis.title.y = element_text(size = 12),
+        axis.title.x = element_blank(),
+        axis.text = element_text(size = 10),
+        legend.position='none')
+
 theme_pie <- theme_void() +
   theme(plot.title = element_text(size = 14, hjust = 0.5),
         axis.text = element_text(size = 12),
@@ -34,17 +41,13 @@ theme_donut <- theme_void() +
         
 # '#F8766D', '#00BA38', '#619CFF'
 
-theme_2 <- theme_bw()+
-theme(axis.text.x = element_text(angle = 0, hjust = 1, vjust = 0.5), legend.position='none')
-
-theme_3 <- theme_bw()+
-theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5), legend.position='none')
-
 ```
 
 
 ```{r}
 df$SeniorCitizen <- as.factor(ifelse(df$SeniorCitizen==1, 'Yes', 'No'))
+
+glimpse(df)
 ```
 
 
@@ -60,7 +63,6 @@ p1 <- ggplot(df_churn, aes(Churn, Count), fill = Churn) +
   geom_col(fill = c('#F8766D', '#00BA38')) +
   geom_text(aes(label = Count), vjust = -0.2) +
   ggtitle("Churn Distribution") +
-  xlab('Churn') + ylab('Number of Customers') +
   theme_bar
 
 
@@ -91,7 +93,7 @@ p3 <- ggplot(df_gender, aes(x = gender, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
     ggtitle('Gender') +
-    theme_bar
+    theme_bar2
     
 p4 <- df_gender %>%
   filter(gender=='Female') %>%
@@ -127,8 +129,8 @@ df_age <- df %>%
 p6 <- ggplot(df_age, aes(x = SeniorCitizen, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
-    ggtitle('Senior Citizen') +
-    theme_bar
+    ggtitle('SeniorCitizen') +
+    theme_bar2
 
     
 p7 <- df_age %>%
@@ -166,7 +168,7 @@ p9 <- ggplot(df_partner, aes(x = Partner, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
     ggtitle('Partner') +
-    theme_bar
+    theme_bar2
 
     
 p10 <- df_partner %>%
@@ -204,7 +206,7 @@ p12 <- ggplot(df_dependent, aes(x = Dependents, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
     ggtitle('Dependents') +
-    theme_bar
+    theme_bar2
 
     
 p13 <- df_dependent %>%
@@ -236,7 +238,7 @@ p_dependent <- plot_grid(p12, plot_grid(p13, p14, ncol = 1))
 plot_grid(plot_grid(p_gender, p_age, p_partner, p_dependent, ncol = 2),
           get_legend(p12 + theme(legend.position='right')),
           ncol = 2,
-          rel_widths = c(1, 0.25))
+          rel_widths = c(2, 0.25))
 
 ```
 
@@ -251,8 +253,8 @@ df_phone <- df %>%
 p15 <- ggplot(df_phone, aes(x = PhoneService, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
-    ggtitle('Phone Service') +
-    theme_bar
+    ggtitle('PhoneService') +
+    theme_bar2
 
     
 p16 <- df_phone %>%
@@ -280,7 +282,7 @@ p17 <- df_phone %>%
 p_phone <- plot_grid(p15,
                      plot_grid(p16, p17, ncol = 3),
                      ncol = 2,
-                     rel_widths = c(1, 2))
+                     rel_widths = c(1.5, 2))
 
 # Mulitple Lines plot
 df_lines <- df %>%
@@ -291,8 +293,8 @@ df_lines <- df %>%
 p18 <- ggplot(df_lines, aes(x = MultipleLines, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
-    ggtitle('Multiple Lines') +
-    theme_bar
+    ggtitle('MultipleLines') +
+    theme_bar2
 
     
 p19 <- df_lines %>%
@@ -332,7 +334,7 @@ p21 <- df_lines %>%
 p_lines <- plot_grid(p18,
                      plot_grid(p19, p20, p21, ncol = 3),
                      ncol = 2,
-                     rel_widths = c(1, 2))
+                     rel_widths = c(1.5, 2))
 
 # Internet Service plot
 df_internet <- df %>%
@@ -343,8 +345,8 @@ df_internet <- df %>%
 p22 <- ggplot(df_internet, aes(x = InternetService, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
-    ggtitle('Internet Service') +
-    theme_bar
+    ggtitle('InternetService') +
+    theme_bar2
 
     
 p23 <- df_internet %>%
@@ -384,7 +386,7 @@ p25 <- df_internet %>%
 p_internet <- plot_grid(p22,
                         plot_grid(p23, p24, p25, ncol = 3),
                         ncol = 2,
-                        rel_widths = c(1, 2))
+                        rel_widths = c(1.5, 2))
 
 plot_grid(p_phone, p_lines, p_internet,
           get_legend(p15 + theme(legend.position='bottom')),
@@ -403,8 +405,8 @@ df_security <- df %>%
 p26 <- ggplot(df_security, aes(x = OnlineSecurity, y = Count, fill = Churn)) +
     geom_bar(stat='identity') +
     scale_fill_manual(values=c('#F8766D', '#00BA38')) +
-    ggtitle('Online Security') +
-    theme_bar
+    ggtitle('OnlineSecurity') +
+    theme_bar2
 
     
 p27 <- df_security %>%
@@ -444,10 +446,283 @@ p29 <- df_security %>%
 p_security <- plot_grid(p26,
                         plot_grid(p27, p28, p29, ncol = 3),
                         ncol = 2,
-                        rel_widths = c(1, 2))
+                        rel_widths = c(1.5, 2))
 
+# Online backup plot
+df_backup <- df %>%
+  group_by(OnlineBackup, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p30 <- ggplot(df_backup, aes(x = OnlineBackup, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('OnlineBackup') +
+    theme_bar2
+
+    
+p31 <- df_backup %>%
+  filter(OnlineBackup=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p32 <- df_backup %>%
+  filter(OnlineBackup=='No internet service') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No internet service") +
+    theme_donut
+
+p33 <- df_backup %>%
+  filter(OnlineBackup=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_backup <- plot_grid(p30,
+                      plot_grid(p31, p32, p33, ncol = 3),
+                      ncol = 2,
+                      rel_widths = c(1.5, 2))
+
+# Device Protection plot
+df_protection <- df %>%
+  group_by(DeviceProtection, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p34 <- ggplot(df_protection, aes(x = DeviceProtection, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('DeviceProtection') +
+    theme_bar2
+
+    
+p35 <- df_protection %>%
+  filter(DeviceProtection=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p36 <- df_protection %>%
+  filter(DeviceProtection=='No internet service') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No internet service") +
+    theme_donut
+
+p37 <- df_protection %>%
+  filter(DeviceProtection=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_protection <- plot_grid(p34,
+                          plot_grid(p35, p36, p37, ncol = 3),
+                          ncol = 2,
+                          rel_widths = c(1.5, 2))
+
+
+plot_grid(p_security, p_backup, p_protection,
+          get_legend(p26 + theme(legend.position='bottom')),
+          ncol = 1)
 
 ```
+
+
+```{r fig.width=10}
+# Tech Support plot
+df_support <- df %>%
+  group_by(TechSupport, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p38 <- ggplot(df_support, aes(x = TechSupport, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('TechSupport') +
+    theme_bar2
+
+    
+p39 <- df_support %>%
+  filter(TechSupport=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p40 <- df_support %>%
+  filter(TechSupport=='No internet service') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No internet service") +
+    theme_donut
+
+p41 <- df_support %>%
+  filter(TechSupport=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_support <- plot_grid(p38,
+                       plot_grid(p39, p40, p41, ncol = 3),
+                       ncol = 2,
+                       rel_widths = c(1.5, 2))
+
+# Streaming TV plot
+df_tv <- df %>%
+  group_by(StreamingTV, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p42 <- ggplot(df_tv, aes(x = StreamingTV, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('StreamingTV') +
+    theme_bar2
+
+    
+p43 <- df_tv %>%
+  filter(StreamingTV=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p44 <- df_tv %>%
+  filter(StreamingTV=='No internet service') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No internet service") +
+    theme_donut
+
+p45 <- df_tv %>%
+  filter(StreamingTV=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_tv <- plot_grid(p42,
+                  plot_grid(p43, p44, p45, ncol = 3),
+                  ncol = 2,
+                  rel_widths = c(1.5, 2))
+
+
+# Streaming Movies plot
+df_movies <- df %>%
+  group_by(StreamingMovies, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p46 <- ggplot(df_movies, aes(x = StreamingMovies, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('StreamingMovies') +
+    theme_bar2
+
+    
+p47 <- df_movies %>%
+  filter(StreamingMovies=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p48 <- df_movies %>%
+  filter(StreamingMovies=='No internet service') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No internet service") +
+    theme_donut
+
+p49 <- df_movies %>%
+  filter(StreamingMovies=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_movies <- plot_grid(p46,
+                  plot_grid(p47, p48, p49, ncol = 3),
+                  ncol = 2,
+                  rel_widths = c(1.5, 2))
+
+plot_grid(p_support, p_tv, p_movies,
+          get_legend(p38 + theme(legend.position='bottom')),
+          ncol = 1)
+```
+
 
 
 
