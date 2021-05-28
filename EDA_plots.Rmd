@@ -724,11 +724,334 @@ plot_grid(p_support, p_tv, p_movies,
 ```
 
 
+```{r fig.width=8}
+# Contract plot
+df_contract <- df %>%
+  group_by(Contract, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p50 <- ggplot(df_contract, aes(x = Contract, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('Contract') +
+    theme_bar2
+
+    
+p51 <- df_contract %>%
+  filter(Contract=='Month-to-month') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Month-to-month") +
+    theme_donut
+
+p52 <- df_contract %>%
+  filter(Contract=='One year') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("One year") +
+    theme_donut
+
+p53 <- df_contract %>%
+  filter(Contract=='Two year') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Two year") +
+    theme_donut
+
+
+p_contract <- plot_grid(p50,
+                        plot_grid(p51, p52, p53, ncol = 3),
+                        ncol = 2,
+                        rel_widths = c(1.75, 2))
+
+# Paperless Billing plot
+df_paperless <- df %>%
+  group_by(PaperlessBilling, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p54 <- ggplot(df_paperless, aes(x = PaperlessBilling, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('PaperlessBilling') +
+    theme_bar2
+
+    
+p55 <- df_paperless %>%
+  filter(PaperlessBilling=='No') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("No") +
+    theme_donut
+
+p56 <- df_paperless %>%
+  filter(PaperlessBilling=='Yes') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Yes") +
+    theme_donut
+
+
+p_paperless <- plot_grid(p54,
+                         plot_grid(p55, p56, ncol = 3),
+                         ncol = 2,
+                         rel_widths = c(1.75, 2))
+
+plot_grid(p_contract, p_paperless,
+          get_legend(p50 + theme(legend.position='bottom')),
+          ncol = 1)
+```
+
+
+```{r fig.width=10}
+# Payment Method plot
+df_payment <- df %>%
+  group_by(PaymentMethod, Churn) %>%
+  summarise(Count = n()) %>%
+  mutate(Percent = prop.table(Count)*100)
+
+p57 <- ggplot(df_payment, aes(x = PaymentMethod, y = Count, fill = Churn)) +
+    geom_bar(stat='identity') +
+    scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle('PaperlessBilling') +
+    theme_bar2 +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p58 <- df_payment %>%
+  filter(PaymentMethod=='Bank transfer (automatic)') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Bank transfer (automatic)") +
+    theme_donut
+
+p59 <- df_payment %>%
+  filter(PaymentMethod=='Credit card (automatic)') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Credit card (automatic)") +
+    theme_donut
+
+p60 <- df_payment %>%
+  filter(PaymentMethod=='Electronic check') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Electronic check") +
+    theme_donut
+
+p61 <- df_payment %>%
+  filter(PaymentMethod=='Mailed check') %>%
+  ggplot(aes(x = 2, y = Percent, fill = Churn)) +
+    geom_col(fill = c('#F8766D', '#00BA38')) +
+    geom_text(aes(x = 2, y = Percent, label = sprintf("%.2f%%", Percent)),
+              position = position_stack(vjust = 0.5, reverse = TRUE),
+              size = 3) +
+    coord_polar('y') + xlim(.2, 2.5) +
+    ggtitle("Mailed check") +
+    theme_donut
 
 
 
+plot_grid(plot_grid(p57,
+                    plot_grid(p58, p59, p60, p61, ncol = 2),
+                    ncol = 2,
+                    rel_widths = c(1.5, 2)),
+          get_legend(p57 + theme(legend.position='bottom')),
+          ncol = 1)
+```
 
 
+```{r fig.width=8}
+# Tenure distribution (histogram)
+p62 <- ggplot(df, aes(x = tenure)) +
+    geom_histogram(binwidth = 1, fill = '#F8766D') +
+    xlab('Months') +
+    ggtitle("Distribution of Tenure") +
+    theme_bar
+
+# Tenure Boxplot
+p63 <- ggplot(df, aes(y = tenure, fill = Churn)) +
+  geom_boxplot() +
+  scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+  ggtitle("Customer Churn vs Tenure") +
+  theme_bar +
+  theme(axis.text.x = element_blank(),
+        legend.position='bottom')
+
+plot_grid(p62, p63, ncol=1)
+```
+
+
+```{r fig.width=8}
+# Monthly Charges distribution (histogram)
+p64 <- ggplot(df, aes(x = MonthlyCharges)) +
+  geom_histogram(binwidth = 5, fill = '#F8766D') +
+  xlab('Dollars (binwidth = 5)') +
+  ggtitle("Monthly Charges Distribution") +
+  theme_bar
+  
+# Monthly Charges Boxplot
+p65 <- ggplot(df, aes(y = MonthlyCharges, fill = Churn)) +
+  geom_boxplot() +
+  scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+  ggtitle("Customer Churn vs Monthly Charges") +
+  theme_bar +
+  theme(axis.text.x = element_blank(),
+        legend.position='bottom')
+        
+plot_grid(p64, p65, ncol=1)
+```
+
+
+```{r fig.width=8}
+#Total Charges distribution (histogram)
+p66 <- ggplot(df, aes(x = TotalCharges)) +
+  geom_histogram(binwidth = 100, fill = '#F8766D') +
+  xlab('Dollars (binwidth = 100)') +
+  ggtitle("Total Charges Distribution") +
+  theme_bar
+
+# Total Charges Boxplot
+p67 <- ggplot(df, aes(y = TotalCharges, fill = Churn)) +
+  geom_boxplot() +
+  scale_fill_manual(values=c('#F8766D', '#00BA38')) +
+  ggtitle("Customer Churn vs Total Charges") +
+  theme_bar +
+  theme(axis.text.x = element_blank(),
+        legend.position='bottom')
+
+plot_grid(p66, p67, ncol=1)
+```
+
+
+```{r fig.width=8}
+# Correlation of Contract vs Tenure
+p68 <- df %>%
+  filter(Contract=="Month-to-month") %>%
+  ggplot(aes(x = tenure, color=Churn)) +
+    geom_freqpoly(size = 2, binwidth = 1) +
+    scale_color_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle("Month-to-month Contract vs Tenure") +
+    xlab("Tenure (Months)") +
+    theme_bar +
+    theme(legend.position='right')
+
+# Correlation of Contract vs Tenure
+p69 <- df %>%
+  filter(Contract=="One year") %>%
+  ggplot(aes(x = tenure, color=Churn)) +
+    geom_freqpoly(size = 2, binwidth = 1) +
+    scale_color_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle("One-year Contract vs Tenure") +
+    xlab("Tenure (Months)") +
+    theme_bar +
+    theme(legend.position='right')
+
+# Correlation of Contract vs Tenure
+p70 <- df %>%
+  filter(Contract=="Two year") %>%
+  ggplot(aes(x = tenure, color=Churn)) +
+    geom_freqpoly(size = 2, binwidth = 1) +
+    scale_color_manual(values=c('#F8766D', '#00BA38')) +
+    ggtitle("Two-year Contract vs Tenure") +
+    xlab("Tenure (Months)") +
+    theme_bar +
+    theme(legend.position='right')
+
+plot_grid(p68, p69, p70, ncol=1)
+```
+
+
+```{r}
+# Correlation between Continuous Variables
+df %>%
+  select(tenure, MonthlyCharges, TotalCharges) %>%
+  drop_na() %>%
+  cor() %>%
+  ggcorrplot(title = "Correlation") +
+  theme_bar2 +
+  theme(axis.title.y = element_blank(), legend.position='right')
+
+```
+
+
+```{r}
+df %>%
+  select(tenure, MonthlyCharges, TotalCharges) %>%
+  drop_na() %>%
+  ggplot(aes(MonthlyCharges, TotalCharges)) +
+  geom_point(colour = "#F8766D") +
+  ggtitle("Monthly Charge vs Total Charge") +
+  theme_bar
+```
+
+```{r fig.width=8}
+# Correlation of Customer Subscription vs Monthly Charge
+p71 <- ggplot(subset(df,
+                     PhoneService %in% c("Yes")
+                     & InternetService %in% c("DSL"," Fiber optic")),
+       aes(x = MonthlyCharges, fill = Churn)) +
+  geom_histogram(binwidth = 1) +
+  ggtitle('Customer Subscription vs Monthly Charge') +
+  ylab('Phone Service\n& Internet Service') +
+  theme_bar +
+  theme(legend.position='right')
+
+# Correlation of Customer Subscription vs Monthly Charge
+p72 <- ggplot(subset(df,
+                     PhoneService %in% c("Yes")
+                     & InternetService %in% c("DSL"," Fiber optic")),
+       aes(x = MonthlyCharges, fill = Churn)) +
+  geom_histogram(binwidth = 1) +
+  ylab('Phone Service') +
+  theme_bar +
+  theme(legend.position='right')
+
+# Correlation of Customer Subscription vs Monthly Charge
+p73 <- ggplot(subset(df,
+                     PhoneService %in% c("Yes")
+                     & InternetService %in% c("DSL"," Fiber optic")),
+       aes(x = MonthlyCharges, fill = Churn)) +
+  geom_histogram(binwidth = 1) +
+  ylab('Internet Service') +
+  theme_bar +
+  theme(legend.position='right')
+
+plot_grid(p71, p72, p73, ncol=1)
+
+```
 
 
 
